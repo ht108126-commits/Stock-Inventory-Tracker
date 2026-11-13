@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/components/CloudRunAutomationModal.tsx","./src/components/TransactionModals.tsx","./src/services/googleSheetsClient.ts","./shared/calculations.ts","./shared/sheetsEngine.ts","./shared/twStockDictionary.ts","./shared/types.ts","./server/googleSheetsServerSync.ts","./server/index.ts","./server/quoteService.ts"],"version":"5.7.3"}
