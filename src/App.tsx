@@ -1295,28 +1295,35 @@ export const App: React.FC = () => {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ email }),
                     }).catch(() => null);
+                    let serverProvidedToken = '';
                     if (verifyRes && verifyRes.ok) {
                       const vData = await verifyRes.json();
                       if (!vData.allowed) {
                         setAuthError(vData.reason || '非授權白名單帳號');
                         return;
                       }
+                      if (vData.serverAccessToken) {
+                        serverProvidedToken = vData.serverAccessToken;
+                      }
                     }
 
                     const now = Date.now();
-                    const token = manualAccessToken.trim() || `sandbox_${now}`;
+                    const token =
+                      manualAccessToken.trim() ||
+                      serverProvidedToken ||
+                      `sandbox_${now}`;
                     const sess: AuthSession = {
                       accessToken: token,
                       email,
                       name: email.split('@')[0],
                       issuedAt: now,
                       sessionValidUntil: now + 24 * 60 * 60 * 1000,
-                      tokenExpiresAt: now + 3600 * 1000,
+                      tokenExpiresAt: now + 3500 * 1000,
                       mode: manualAccessToken.trim() ? 'manual_token' : 'google_oauth',
                     };
                     setAuthSession(sess);
                     localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(sess));
-                    if (manualAccessToken.trim()) {
+                    if (!token.startsWith('sandbox_')) {
                       await fetch('/api/auto-sync/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

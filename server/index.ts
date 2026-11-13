@@ -9,6 +9,7 @@ import {
   clearServerSessionCredentials,
   executeServerPriceSync,
   getServerAutoSyncStatus,
+  resolveServerAccessToken,
   startServerAutoSyncScheduler,
   updateServerAutoSyncConfig,
   USER_DEFAULT_OWNER_EMAIL,
@@ -150,16 +151,22 @@ app.get('/api/sheets/csv-fallback', async (req, res) => {
   }
 });
 
-// 4. 驗證私人網站擁有者身分 API
-app.post('/api/auth/verify-owner', (req, res) => {
+// 4. 驗證私人網站擁有者身分 API (在 Cloud Run 環境下自動為擁有者簽發預設服務帳號 Access Token)
+app.post('/api/auth/verify-owner', async (req, res) => {
   const email = String(req.body?.email || '').trim();
   const check = checkOwnerEmailAllowed(email);
+  let serverTokenInfo: { token: string; method: string } | null = null;
+  if (check.allowed) {
+    serverTokenInfo = await resolveServerAccessToken().catch(() => null);
+  }
   res.json({
     allowed: check.allowed,
     reason: check.reason,
     ownerEmail: USER_DEFAULT_OWNER_EMAIL,
     gcpProjectId: USER_GCP_PROJECT_ID,
     defaultSpreadsheetId: USER_DEFAULT_SPREADSHEET_ID,
+    serverAccessToken: serverTokenInfo?.token || null,
+    serverAuthMethod: serverTokenInfo?.method || null,
   });
 });
 
