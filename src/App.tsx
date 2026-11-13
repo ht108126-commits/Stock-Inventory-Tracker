@@ -124,7 +124,7 @@ export const App: React.FC = () => {
       ''
   );
   const [manualAccessToken, setManualAccessToken] = useState('');
-  const [manualUserEmail, setManualUserEmail] = useState('');
+  const [manualUserEmail, setManualUserEmail] = useState('ht108126@gmail.com');
   const [authError, setAuthError] = useState<string | null>(null);
 
   // 試算表綁定與匯入選項
@@ -257,7 +257,7 @@ export const App: React.FC = () => {
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: REQUIRED_GOOGLE_SCOPES,
-        hint: loginHint || localStorage.getItem(STORAGE_KEYS.LOGIN_HINT) || undefined,
+        hint: loginHint || localStorage.getItem(STORAGE_KEYS.LOGIN_HINT) || 'ht108126@gmail.com',
         prompt: loginHint ? '' : 'select_account',
         callback: async (tokenResponse: any) => {
           if (tokenResponse?.error) {
@@ -268,7 +268,7 @@ export const App: React.FC = () => {
           const expiresInSec = Number(tokenResponse.expires_in) || 3599;
 
           // 查詢使用者個人資訊並檢查私人網站白名單
-          let email = loginHint || 'owner@gmail.com';
+          let email = loginHint || 'ht108126@gmail.com';
           let name = 'Google 授權使用者';
           let picture = '';
 

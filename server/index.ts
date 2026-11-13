@@ -11,7 +11,9 @@ import {
   getServerAutoSyncStatus,
   startServerAutoSyncScheduler,
   updateServerAutoSyncConfig,
+  USER_DEFAULT_OWNER_EMAIL,
   USER_DEFAULT_SPREADSHEET_ID,
+  USER_GCP_PROJECT_ID,
 } from './googleSheetsServerSync';
 import { fetchBatchStockQuotes, fetchSingleStockQuote } from './quoteService';
 
@@ -25,10 +27,10 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
 /**
- * 檢查是否通過私人白名單信箱驗證 (若環境變數設定 ALLOWED_OWNER_EMAILS)
+ * 檢查是否通過私人白名單信箱驗證 (預設鎖定擁有者信箱 ht108126@gmail.com)
  */
 function checkOwnerEmailAllowed(email?: string): { allowed: boolean; reason?: string } {
-  const rawList = process.env.ALLOWED_OWNER_EMAILS || '';
+  const rawList = USER_DEFAULT_OWNER_EMAIL;
   const allowedList = rawList
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -40,14 +42,14 @@ function checkOwnerEmailAllowed(email?: string): { allowed: boolean; reason?: st
   if (!email) {
     return {
       allowed: false,
-      reason: '此私人網站已啟用擁有者白名單保護，請使用授權的 Google 帳號登入。',
+      reason: '此私人網站已啟用擁有者白名單保護 (ht108126@gmail.com)，請使用授權的 Google 帳號登入。',
     };
   }
   const normalized = email.trim().toLowerCase();
   if (!allowedList.includes(normalized)) {
     return {
       allowed: false,
-      reason: `拒絕存取：帳號 ${email} 不在私人網站擁有者白名單中。`,
+      reason: `拒絕存取：帳號 ${email} 不在私人網站擁有者白名單 (ht108126@gmail.com) 中。`,
     };
   }
   return { allowed: true };
@@ -155,6 +157,8 @@ app.post('/api/auth/verify-owner', (req, res) => {
   res.json({
     allowed: check.allowed,
     reason: check.reason,
+    ownerEmail: USER_DEFAULT_OWNER_EMAIL,
+    gcpProjectId: USER_GCP_PROJECT_ID,
     defaultSpreadsheetId: USER_DEFAULT_SPREADSHEET_ID,
   });
 });
@@ -177,10 +181,12 @@ app.post('/api/auto-sync/register', (req, res) => {
     ownerEmail,
   } = req.body || {};
 
-  const check = checkOwnerEmailAllowed(ownerEmail);
-  if (!check.allowed && process.env.ALLOWED_OWNER_EMAILS) {
-    res.status(403).json({ error: check.reason });
-    return;
+  if (ownerEmail) {
+    const check = checkOwnerEmailAllowed(ownerEmail);
+    if (!check.allowed) {
+      res.status(403).json({ error: check.reason });
+      return;
+    }
   }
 
   updateServerAutoSyncConfig({

@@ -1,0 +1,45 @@
+name: Deploy to Google Cloud Run (stock-notebook-8b041)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: stock-notebook-8b041
+  REGION: asia-east1
+  SERVICE_NAME: stock-inventory-tracker
+  OWNER_EMAIL: ht108126@gmail.com
+  SPREADSHEET_ID: 1YWMTQS-wo_HUcQsWuewAZkn6wP36C-o2P5ftgc9WDCw
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy to Cloud Run
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          source: .
+          env_vars: |
+            GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+            DEFAULT_SPREADSHEET_ID=${{ env.SPREADSHEET_ID }}
+            ALLOWED_OWNER_EMAILS=${{ env.OWNER_EMAIL }}
+            CRON_SECRET=sit_cron_secret_8b041
+          flags: '--allow-unauthenticated --min-instances=0 --max-instances=2 --memory=512Mi'

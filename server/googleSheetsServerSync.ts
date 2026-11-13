@@ -13,6 +13,10 @@ import { fetchBatchStockQuotes } from './quoteService';
 
 export const USER_DEFAULT_SPREADSHEET_ID =
   process.env.DEFAULT_SPREADSHEET_ID || '1YWMTQS-wo_HUcQsWuewAZkn6wP36C-o2P5ftgc9WDCw';
+export const USER_DEFAULT_OWNER_EMAIL =
+  process.env.ALLOWED_OWNER_EMAILS || 'ht108126@gmail.com';
+export const USER_GCP_PROJECT_ID =
+  process.env.GCP_PROJECT_ID || 'stock-notebook-8b041';
 
 export interface ServerAutoSyncConfig {
   enabled: boolean;
@@ -664,13 +668,14 @@ export function clearServerSessionCredentials() {
  * 取得後端自動刷新引擎狀態與歷史紀錄
  */
 export function getServerAutoSyncStatus() {
-  const allowedEmails = (process.env.ALLOWED_OWNER_EMAILS || '')
+  const allowedEmails = USER_DEFAULT_OWNER_EMAIL
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
   return {
     enabled: runtimeSyncConfig.enabled,
+    gcpProjectId: USER_GCP_PROJECT_ID,
     spreadsheetId: runtimeSyncConfig.spreadsheetId,
     intervalMinutes: runtimeSyncConfig.intervalMinutes,
     marketHoursOnly: runtimeSyncConfig.marketHoursOnly,

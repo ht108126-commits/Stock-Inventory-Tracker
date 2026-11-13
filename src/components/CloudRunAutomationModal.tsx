@@ -162,29 +162,33 @@ function autoRefreshTaiwanStockPrices() {
   sheet.getRange('L2').setValue(winCount + ' 獲利 / ' + lossCount + ' 虧損');
 }`;
 
-  const cloudRunDeployCmd = `# 1. 設定 GCP 專案與區域 (例如台灣彰濱 asia-east1)
-gcloud config set project YOUR_GCP_PROJECT_ID
+  const cloudRunDeployCmd = `# 在 Google Cloud Shell 貼上以下單行指令，即可全自動部署至專案 stock-notebook-8b041：
+rm -rf Stock-Inventory-Tracker && git clone https://github.com/ht108126-commits/Stock-Inventory-Tracker.git && cd Stock-Inventory-Tracker && bash deploy-cloudrun.sh
+
+# -------------------------------------------------------------------------
+# 或直接執行以下 gcloud 指令：
+gcloud config set project stock-notebook-8b041
 gcloud config set run/region asia-east1
 
-# 2. 一鍵建置並部署至 Google Cloud Run
-#    同時設定你的專屬 Google 信箱白名單 (ALLOWED_OWNER_EMAILS) 與預設試算表 ID
 gcloud run deploy stock-inventory-tracker \\
   --source . \\
+  --project stock-notebook-8b041 \\
   --region asia-east1 \\
   --allow-unauthenticated \\
-  --set-env-vars="DEFAULT_SPREADSHEET_ID=${targetSheetId},ALLOWED_OWNER_EMAILS=你的Google信箱@gmail.com,CRON_SECRET=my_private_cron_secret_888" \\
+  --set-env-vars="GCP_PROJECT_ID=stock-notebook-8b041,DEFAULT_SPREADSHEET_ID=${targetSheetId},ALLOWED_OWNER_EMAILS=ht108126@gmail.com,CRON_SECRET=sit_cron_secret_8b041" \\
   --min-instances=0 \\
   --max-instances=2 \\
   --memory=512Mi`;
 
-  const cloudSchedulerCmd = `# 建立每 10 分鐘自動觸發後端刷新的 Cloud Scheduler 排程 (週一至週五 09:00~14:00 台北時間)
+  const cloudSchedulerCmd = `# 建立每 10 分鐘自動觸發後端刷新的 Cloud Scheduler 排程 (專案: stock-notebook-8b041)
 gcloud scheduler jobs create http sync-tw-stock-prices-10m \\
+  --project=stock-notebook-8b041 \\
   --location=asia-east1 \\
   --schedule="*/10 9-14 * * 1-5" \\
   --time-zone="Asia/Taipei" \\
   --uri="${originUrl}/api/cron/sync-prices?source=cloud_scheduler" \\
   --http-method=POST \\
-  --headers="x-cron-secret=my_private_cron_secret_888"`;
+  --headers="x-cron-secret=sit_cron_secret_8b041"`;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
